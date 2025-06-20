@@ -37,7 +37,8 @@
   },
   "homepage": "https://github.com/karteekiitg/email-alias-core#readme",
   "publishConfig": {
-    "provenance": true
+    "provenance": true,
+    "access": "public"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
