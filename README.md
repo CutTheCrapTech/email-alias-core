@@ -48,11 +48,11 @@ yarn add email-alias-core
 The library exports two main functions: `generateEmailAlias` and `validateEmailAlias`.
 
 ```javascript
-import { generateEmailAlias, validateEmailAlias } from "email-alias-core";
+import { generateEmailAlias, validateEmailAlias } from 'email-alias-core';
 
 const config = {
-  secretKey: "a-very-secret-key-that-is-long-enough",
-  domain: "example.com",
+  secretKey: 'a-very-secret-key-that-is-long-enough',
+  domain: 'example.com',
 };
 
 // --- Generating an Alias ---
@@ -60,7 +60,7 @@ const config = {
 async function createAlias() {
   const alias = await generateEmailAlias({
     ...config,
-    aliasParts: ["shop", "amazon"],
+    aliasParts: ['shop', 'amazon'],
   });
   console.log(alias);
   // Example output: shop-amazon-a1b2c3d4@example.com
@@ -82,8 +82,8 @@ async function checkAlias(incomingAlias) {
 }
 
 createAlias();
-checkAlias("shop-amazon-a1b2c3d4@example.com");
-checkAlias("shop-amazon-ffffffff@example.com");
+checkAlias('shop-amazon-a1b2c3d4@example.com');
+checkAlias('shop-amazon-ffffffff@example.com');
 ```
 
 ## API
