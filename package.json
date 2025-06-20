@@ -36,6 +36,9 @@
     "url": "https://github.com/karteekiitg/email-alias-core/issues"
   },
   "homepage": "https://github.com/karteekiitg/email-alias-core#readme",
+  "publishConfig": {
+    "provenance": true
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
