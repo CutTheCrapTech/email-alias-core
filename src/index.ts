@@ -3,8 +3,6 @@
  * @copyright 2025 karteekiitg
  */
 
-import { webcrypto as crypto } from 'node:crypto';
-
 /**
  * Options for the {@link generateEmailAlias} function.
  * @public

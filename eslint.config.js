@@ -33,7 +33,13 @@ export default [
   {
     languageOptions: {
       globals: {
-        ...globals.node,
+        ...Object.fromEntries(
+          Object.entries({ ...globals.browser, ...globals.worker }).map(([key, value]) => [
+            key.trim(),
+            value,
+          ])
+        ),
+        crypto: 'readonly',
       },
     },
   },
