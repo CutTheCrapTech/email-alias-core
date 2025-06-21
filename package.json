@@ -10,7 +10,7 @@
     "build": "tsc",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,json}\" \"*.json\"",
-    "test": "jest",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "prepublishOnly": "npm run build",
     "semantic-release": "npx semantic-release"
   },

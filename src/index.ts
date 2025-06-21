@@ -3,6 +3,9 @@
  * @copyright 2025 karteekiitg
  */
 
+// Import our universal crypto implementation
+import { crypto } from './crypto.js';
+
 /**
  * Options for the {@link generateEmailAlias} function.
  * @public
@@ -142,7 +145,14 @@ export async function validateEmailAlias({
     return false;
   }
 
-  const [, localPartPrefix, providedHash] = match;
+  // Extract the parts with proper null checking
+  const localPartPrefix = match[1];
+  const providedHash = match[2];
+
+  // Additional safety check (though this should never happen given our regex)
+  if (!localPartPrefix || !providedHash) {
+    return false;
+  }
 
   // Re-generate the hash using the same parameters.
   const signatureBuffer = await _getHmacSignature(secretKey, localPartPrefix);

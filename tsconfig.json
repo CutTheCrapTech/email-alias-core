@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     /* Target Environment */
-    "target": "ES2022",
+    "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ES2020", "DOM", "WebWorker"],
 
     /* Output Configuration for Publication */
     "declaration": true,
@@ -16,6 +16,7 @@
     /* Strictness & Code Quality */
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true, // Better for workers
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowUnusedLabels": false,
@@ -25,8 +26,14 @@
     "noImplicitReturns": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+
+    /* Multi-environment essentials */
+    "isolatedModules": true, // Critical for workers/bundlers
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
