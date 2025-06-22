@@ -40,6 +40,11 @@
     "provenance": true,
     "access": "public"
   },
+  "engines": {
+    "node": "^22.0.0",
+    "npm": "^9.0.0",
+    "eslint": "^9.29.0"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
