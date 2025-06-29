@@ -1,39 +1,39 @@
 {
-	"compilerOptions": {
-		/* Target Environment */
-		"target": "ES2020",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"lib": ["ES2020", "DOM", "WebWorker"],
+  "compilerOptions": {
+    /* Target Environment */
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2020", "DOM", "WebWorker"],
 
-		/* Output Configuration for Publication */
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"outDir": "./dist",
-		"rootDir": "./src",
+    /* Output Configuration for Publication */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
 
-		/* Strictness & Code Quality */
-		"strict": true,
-		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true, // Better for workers
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"allowUnusedLabels": false,
-		"allowUnreachableCode": false,
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitOverride": true,
-		"noImplicitReturns": true,
-		"noPropertyAccessFromIndexSignature": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
+    /* Strictness & Code Quality */
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true, // Better for workers
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
 
-		/* Multi-environment essentials */
-		"isolatedModules": true, // Critical for workers/bundlers
-		"resolveJsonModule": true,
-		"exactOptionalPropertyTypes": true,
-		"noUncheckedIndexedAccess": true
-	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+    /* Multi-environment essentials */
+    "isolatedModules": true, // Critical for workers/bundlers
+    "resolveJsonModule": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

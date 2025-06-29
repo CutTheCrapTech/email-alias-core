@@ -27,7 +27,3 @@ coverage/
 
 # macOS specific
 .DS_Store
-
-# Editor-specific directories
-.vscode/
-.idea/
