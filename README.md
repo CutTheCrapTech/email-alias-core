@@ -113,4 +113,4 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/karteekiitg/email-alias-core/issues).
+Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/CutTheCrapTech/email-alias-core/issues).

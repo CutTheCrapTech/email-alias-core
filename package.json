@@ -40,7 +40,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/karteekiitg/email-alias-core.git"
+    "url": "git+https://github.com/CutTheCrapTech/email-alias-core.git"
   },
   "keywords": [
     "email",
@@ -54,12 +54,12 @@
     "worker",
     "custom-domain"
   ],
-  "author": "karteekiitg",
+  "author": "CutTheCrapTech",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/karteekiitg/email-alias-core/issues"
+    "url": "https://github.com/CutTheCrapTech/email-alias-core/issues"
   },
-  "homepage": "https://github.com/karteekiitg/email-alias-core#readme",
+  "homepage": "https://github.com/CutTheCrapTech/email-alias-core#readme",
   "publishConfig": {
     "provenance": true,
     "access": "public"
