@@ -164,3 +164,53 @@ export async function validateEmailAlias({
 
   return providedHash === expectedHash;
 }
+
+/**
+ * Generates a cryptographically secure, URL-safe random string.
+ *
+ * @remarks
+ * This function works in browser, Node.js, and Cloudflare Workers environments.
+ * It generates random bytes and encodes them as a URL-safe base64 string.
+ *
+ * @param length - The desired length of the random string in characters.
+ * @returns A random URL-safe string.
+ * @throws An error if `length` is not a positive integer or if the crypto API is unavailable.
+ *
+ * @public
+ */
+export function generateSecureRandomString(length: number): string {
+  if (!Number.isInteger(length) || length <= 0) {
+    throw new Error("Length must be a positive integer.");
+  }
+
+  // Calculate the number of bytes needed to generate a string of the desired length
+  // Base64 encoding produces 4 characters for every 3 bytes, so we need ceil(length * 3/4) bytes
+  // But we generate a bit more to account for URL-safe replacements and padding removal
+  const bytesNeeded = Math.ceil((length * 3) / 4) + 2;
+
+  // Get crypto object with getRandomValues - it's available on the main crypto object
+  const cryptoObj = crypto as unknown as Crypto;
+  const randomBytes = new Uint8Array(bytesNeeded);
+  cryptoObj.getRandomValues(randomBytes);
+
+  // Convert to base64 - handle different environments
+  let base64: string;
+  if (typeof Buffer !== "undefined") {
+    // Node.js environment
+    base64 = Buffer.from(randomBytes).toString("base64");
+  } else if (typeof btoa !== "undefined") {
+    // Browser/Cloudflare Workers environment
+    base64 = btoa(String.fromCharCode(...randomBytes));
+  } else {
+    throw new Error("Base64 encoding not available in this environment");
+  }
+
+  // Make URL-safe: replace + with -, / with _, and remove padding =
+  const urlSafe = base64
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+
+  // Return the requested length
+  return urlSafe.substring(0, length);
+}

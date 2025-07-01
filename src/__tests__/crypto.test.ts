@@ -27,6 +27,23 @@ describe("crypto.ts", () => {
     verify: jest.fn(),
   });
 
+  // Mock getRandomValues for testing
+  const createMockGetRandomValues = () =>
+    jest.fn().mockImplementation((...args: unknown[]) => {
+      const array = args[0] as Uint8Array;
+      // Fill with predictable values for testing
+      for (let i = 0; i < array.length; i++) {
+        array[i] = i % 256;
+      }
+      return array;
+    });
+
+  // Create mock crypto with both subtle and getRandomValues
+  const createMockCrypto = () => ({
+    subtle: createMockSubtleCrypto(),
+    getRandomValues: createMockGetRandomValues(),
+  });
+
   beforeEach(() => {
     // Clear module cache for crypto.ts to ensure fresh import in each test
     jest.resetModules();
@@ -95,8 +112,7 @@ describe("crypto.ts", () => {
   });
 
   it("should use globalThis.crypto if available (modern browser/worker environment)", async () => {
-    const mockSubtleCrypto = createMockSubtleCrypto();
-    const mockCrypto = { subtle: mockSubtleCrypto };
+    const mockCrypto = createMockCrypto();
 
     Object.defineProperty(globalThis, "crypto", {
       value: mockCrypto,
@@ -118,12 +134,14 @@ describe("crypto.ts", () => {
 
     const { crypto: importedCrypto } = await import("../crypto.js");
     expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockSubtleCrypto);
+    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
+    expect(importedCrypto.getRandomValues).toStrictEqual(
+      mockCrypto.getRandomValues,
+    );
   });
 
   it("should use window.crypto if globalThis.crypto is not available (older browser)", async () => {
-    const mockSubtleCrypto = createMockSubtleCrypto();
-    const mockCrypto = { subtle: mockSubtleCrypto };
+    const mockCrypto = createMockCrypto();
 
     Object.defineProperty(globalThis, "crypto", {
       value: undefined,
@@ -143,12 +161,14 @@ describe("crypto.ts", () => {
 
     const { crypto: importedCrypto } = await import("../crypto.js");
     expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockSubtleCrypto);
+    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
+    expect(importedCrypto.getRandomValues).toStrictEqual(
+      mockCrypto.getRandomValues,
+    );
   });
 
   it("should use self.crypto if globalThis.crypto and window.crypto are not available (web worker)", async () => {
-    const mockSubtleCrypto = createMockSubtleCrypto();
-    const mockCrypto = { subtle: mockSubtleCrypto };
+    const mockCrypto = createMockCrypto();
 
     Object.defineProperty(globalThis, "crypto", {
       value: undefined,
@@ -168,12 +188,15 @@ describe("crypto.ts", () => {
 
     const { crypto: importedCrypto } = await import("../crypto.js");
     expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockSubtleCrypto);
+    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
+    expect(importedCrypto.getRandomValues).toStrictEqual(
+      mockCrypto.getRandomValues,
+    );
   });
 
   it("should use node:crypto.webcrypto in Node.js environment", async () => {
     await jest.isolateModulesAsync(async () => {
-      const mockWebCrypto = { subtle: createMockSubtleCrypto() };
+      const mockWebCrypto = createMockCrypto();
 
       // Clear browser/worker crypto APIs
       Object.defineProperty(globalThis, "crypto", {
@@ -198,7 +221,7 @@ describe("crypto.ts", () => {
           return { webcrypto: mockWebCrypto };
         }
         throw new Error(`Module ${module} not found`);
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
 
       const { crypto: importedCrypto } = await import("../crypto.js");
       expect(importedCrypto).toStrictEqual(mockWebCrypto);
@@ -208,7 +231,7 @@ describe("crypto.ts", () => {
 
   it("should fallback to crypto.webcrypto if node:crypto fails (older Node.js)", async () => {
     await jest.isolateModulesAsync(async () => {
-      const mockWebCrypto = { subtle: createMockSubtleCrypto() };
+      const mockWebCrypto = createMockCrypto();
 
       // Clear browser/worker crypto APIs
       Object.defineProperty(globalThis, "crypto", {
@@ -236,7 +259,7 @@ describe("crypto.ts", () => {
           return { webcrypto: mockWebCrypto };
         }
         throw new Error(`Module ${module} not found`);
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
 
       const { crypto: importedCrypto } = await import("../crypto.js");
       expect(importedCrypto).toStrictEqual(mockWebCrypto);
@@ -273,7 +296,7 @@ describe("crypto.ts", () => {
           return {}; // Simulate crypto module without webcrypto
         }
         throw new Error(`Module ${module} not found`);
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
 
       await expect(import("../crypto.js")).rejects.toThrow(
         "Web Crypto API not available. Node.js 16+ required.",
@@ -303,7 +326,7 @@ describe("crypto.ts", () => {
       // Mock require function to always throw
       global.require = jest.fn().mockImplementation((module: unknown) => {
         throw new Error(`Cannot require module ${module}`);
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
 
       await expect(import("../crypto.js")).rejects.toThrow(
         "Crypto API not available in this environment",
@@ -333,7 +356,7 @@ describe("crypto.ts", () => {
       // Mock require to fail to simulate non-Node.js environment
       global.require = jest.fn().mockImplementation(() => {
         throw new Error("require is not defined");
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
 
       await expect(import("../crypto.js")).rejects.toThrow(
         "Crypto API not available in this environment",
@@ -363,7 +386,37 @@ describe("crypto.ts", () => {
       // Mock require to fail
       global.require = jest.fn().mockImplementation(() => {
         throw new Error("No crypto module");
-      }) as unknown as NodeRequire;
+      }) as unknown as NodeJS.Require;
+
+      await expect(import("../crypto.js")).rejects.toThrow(
+        "Crypto API not available in this environment",
+      );
+    });
+  });
+
+  it("should reject crypto objects without getRandomValues property", async () => {
+    await jest.isolateModulesAsync(async () => {
+      // Set globalThis.crypto with subtle but without getRandomValues
+      Object.defineProperty(globalThis, "crypto", {
+        value: { subtle: createMockSubtleCrypto() }, // No getRandomValues property
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(globalThis, "window", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(globalThis, "self", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      // Mock require to fail
+      global.require = jest.fn().mockImplementation(() => {
+        throw new Error("No crypto module");
+      }) as unknown as NodeJS.Require;
 
       await expect(import("../crypto.js")).rejects.toThrow(
         "Crypto API not available in this environment",

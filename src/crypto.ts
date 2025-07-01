@@ -6,6 +6,7 @@
 // Type definition for crypto interface
 interface CryptoInterface {
   subtle: SubtleCrypto;
+  getRandomValues: (array: Uint8Array) => Uint8Array;
 }
 
 /**
@@ -14,18 +15,30 @@ interface CryptoInterface {
  */
 function getCrypto(): CryptoInterface {
   // Browser extensions, modern browsers, and Cloudflare Workers
-  if (typeof globalThis !== "undefined" && globalThis.crypto?.subtle) {
-    return globalThis.crypto;
+  if (
+    typeof globalThis !== "undefined" &&
+    globalThis.crypto?.subtle &&
+    typeof globalThis.crypto?.getRandomValues === "function"
+  ) {
+    return globalThis.crypto as CryptoInterface;
   }
 
   // Older browsers fallback
-  if (typeof window !== "undefined" && window.crypto?.subtle) {
-    return window.crypto;
+  if (
+    typeof window !== "undefined" &&
+    window.crypto?.subtle &&
+    typeof window.crypto?.getRandomValues === "function"
+  ) {
+    return window.crypto as CryptoInterface;
   }
 
   // Web Workers fallback
-  if (typeof self !== "undefined" && self.crypto?.subtle) {
-    return self.crypto;
+  if (
+    typeof self !== "undefined" &&
+    self.crypto?.subtle &&
+    typeof self.crypto?.getRandomValues === "function"
+  ) {
+    return self.crypto as CryptoInterface;
   }
 
   // Node.js environment detection
@@ -33,7 +46,10 @@ function getCrypto(): CryptoInterface {
     try {
       // Try modern Node.js (16+) with node:crypto
       const nodeCrypto = require("node:crypto");
-      if (nodeCrypto.webcrypto?.subtle) {
+      if (
+        nodeCrypto.webcrypto?.subtle &&
+        typeof nodeCrypto.webcrypto?.getRandomValues === "function"
+      ) {
         return nodeCrypto.webcrypto as CryptoInterface;
       }
     } catch {
@@ -41,7 +57,10 @@ function getCrypto(): CryptoInterface {
       try {
         // biome-ignore lint/style/useNodejsImportProtocol: Intentional fallback for older Node.js versions
         const crypto = require("crypto");
-        if (crypto.webcrypto?.subtle) {
+        if (
+          crypto.webcrypto?.subtle &&
+          typeof crypto.webcrypto?.getRandomValues === "function"
+        ) {
           return crypto.webcrypto as CryptoInterface;
         }
         // If webcrypto is not available in the crypto module

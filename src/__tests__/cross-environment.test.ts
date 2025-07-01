@@ -3,7 +3,11 @@
  * @copyright 2025 karteekiitg
  */
 
-import { generateEmailAlias, validateEmailAlias } from "../index.js";
+import {
+  generateEmailAlias,
+  generateSecureRandomString,
+  validateEmailAlias,
+} from "../index.js";
 
 /**
  * Cross-environment consistency tests for email alias generation and validation.
@@ -417,6 +421,295 @@ describe("Cross-Environment Consistency", () => {
           (sig) => JSON.stringify(sig) === JSON.stringify(signatures[0]),
         ),
       ).toBe(true);
+    });
+  });
+
+  describe("generateSecureRandomString Cross-Environment Consistency", () => {
+    describe("Deterministic properties", () => {
+      it("should generate strings with consistent character sets across environments", () => {
+        const lengths = [10, 25, 50, 100];
+
+        lengths.forEach((length) => {
+          const result = generateSecureRandomString(length);
+
+          // Should always have the correct length
+          expect(result).toHaveLength(length);
+
+          // Should always use URL-safe base64 character set
+          expect(result).toMatch(/^[A-Za-z0-9_-]*$/);
+
+          // Should never contain standard base64 unsafe characters
+          expect(result).not.toMatch(/[+/=]/);
+        });
+      });
+
+      it("should handle edge cases consistently", () => {
+        // Test minimum length
+        const minResult = generateSecureRandomString(1);
+        expect(minResult).toHaveLength(1);
+        expect(minResult).toMatch(/^[A-Za-z0-9_-]$/);
+
+        // Test various boundary lengths
+        [2, 3, 4, 8, 16, 32, 64].forEach((length) => {
+          const result = generateSecureRandomString(length);
+          expect(result).toHaveLength(length);
+          expect(result).toMatch(/^[A-Za-z0-9_-]*$/);
+        });
+      });
+
+      it("should throw identical errors for invalid inputs across environments", () => {
+        const invalidInputs = [0, -1, 1.5, NaN, Infinity];
+
+        invalidInputs.forEach((input) => {
+          expect(() => generateSecureRandomString(input)).toThrow(
+            "Length must be a positive integer.",
+          );
+        });
+      });
+    });
+
+    describe("Randomness quality", () => {
+      it("should generate unique strings consistently", () => {
+        const length = 32;
+        const iterations = 100;
+        const results = new Set<string>();
+
+        for (let i = 0; i < iterations; i++) {
+          const result = generateSecureRandomString(length);
+          expect(results.has(result)).toBe(false);
+          results.add(result);
+        }
+
+        expect(results.size).toBe(iterations);
+      });
+
+      it("should have good entropy distribution across environments", () => {
+        const length = 200;
+        const result = generateSecureRandomString(length);
+
+        // Count character frequencies
+        const charCounts: Record<string, number> = {};
+        for (const char of result) {
+          charCounts[char] = (charCounts[char] || 0) + 1;
+        }
+
+        // With good entropy, no single character should dominate
+        const maxRepeats = Math.max(...Object.values(charCounts));
+        const totalChars = Object.keys(charCounts).length;
+
+        // Should have reasonable character diversity
+        expect(totalChars).toBeGreaterThan(10);
+        expect(maxRepeats).toBeLessThan(length / 5); // No char more than 20% of total
+      });
+
+      it("should maintain randomness in concurrent operations", () => {
+        const promises = Array.from({ length: 20 }, (_, i) =>
+          Promise.resolve(generateSecureRandomString(30 + i)),
+        );
+
+        return Promise.all(promises).then((results) => {
+          // All results should be unique
+          const uniqueResults = new Set(results);
+          expect(uniqueResults.size).toBe(20);
+
+          // All results should have correct lengths and character sets
+          results.forEach((result, index) => {
+            expect(result).toHaveLength(30 + index);
+            expect(result).toMatch(/^[A-Za-z0-9_-]*$/);
+          });
+        });
+      });
+    });
+
+    describe("Performance consistency", () => {
+      it("should perform efficiently across different lengths", () => {
+        const lengths = [10, 50, 100, 500, 1000];
+
+        lengths.forEach((length) => {
+          const startTime = Date.now();
+          const result = generateSecureRandomString(length);
+          const endTime = Date.now();
+
+          expect(result).toHaveLength(length);
+          expect(endTime - startTime).toBeLessThan(50); // Should be fast
+        });
+      });
+
+      it("should handle batch operations efficiently", () => {
+        const startTime = Date.now();
+        const results: string[] = [];
+
+        for (let i = 0; i < 100; i++) {
+          results.push(generateSecureRandomString(32));
+        }
+
+        const endTime = Date.now();
+
+        // All results should be valid and unique
+        expect(results).toHaveLength(100);
+        const uniqueResults = new Set(results);
+        expect(uniqueResults.size).toBe(100);
+
+        // Should complete in reasonable time
+        expect(endTime - startTime).toBeLessThan(500);
+      });
+    });
+
+    describe("URL-safe encoding consistency", () => {
+      it("should consistently produce URL-safe strings", () => {
+        const results = Array.from({ length: 50 }, () =>
+          generateSecureRandomString(64),
+        );
+
+        results.forEach((result) => {
+          // Should be URL-safe
+          expect(result).toMatch(/^[A-Za-z0-9_-]*$/);
+
+          // Should not require URL encoding
+          expect(encodeURIComponent(result)).toBe(result);
+
+          // Should not contain padding or unsafe characters
+          expect(result.includes("=")).toBe(false);
+          expect(result.includes("+")).toBe(false);
+          expect(result.includes("/")).toBe(false);
+        });
+      });
+
+      it("should use URL-safe replacements when needed", () => {
+        // Generate many strings to ensure we get some - and _ characters
+        const largeString = Array.from({ length: 100 }, () =>
+          generateSecureRandomString(50),
+        ).join("");
+
+        // Should contain URL-safe replacement characters
+        // (This is probabilistic but very likely with this much data)
+        const hasUrlSafeChars = /[_-]/.test(largeString);
+        expect(hasUrlSafeChars).toBe(true);
+      });
+    });
+
+    describe("Crypto implementation consistency", () => {
+      it("should use the same crypto source across environments", () => {
+        // This test ensures the crypto module is working consistently
+        expect(() => generateSecureRandomString(10)).not.toThrow();
+
+        // Multiple calls should work without crypto errors
+        const results = [
+          generateSecureRandomString(10),
+          generateSecureRandomString(20),
+          generateSecureRandomString(30),
+        ];
+
+        results.forEach((result, index) => {
+          expect(result).toHaveLength((index + 1) * 10);
+          expect(result).toMatch(/^[A-Za-z0-9_-]*$/);
+        });
+      });
+
+      it("should handle crypto API availability gracefully", async () => {
+        // Test that the crypto implementation is available and working
+        const { crypto } = await import("../crypto.js");
+
+        expect(crypto).toBeDefined();
+        expect(crypto.getRandomValues).toBeDefined();
+        expect(typeof crypto.getRandomValues).toBe("function");
+
+        // Test that getRandomValues works as expected
+        const testArray = new Uint8Array(16);
+        const originalArray = new Uint8Array(testArray);
+
+        crypto.getRandomValues(testArray);
+
+        // Array should be modified (extremely unlikely to be identical)
+        expect(testArray).not.toEqual(originalArray);
+      });
+    });
+
+    describe("Integration with email alias functions", () => {
+      it("should work seamlessly with email alias generation", async () => {
+        // Generate random components for email alias
+        const randomService = generateSecureRandomString(8);
+        const randomProvider = generateSecureRandomString(6);
+        const secretKey = generateSecureRandomString(32);
+
+        // Use in email alias generation
+        const alias = await generateEmailAlias({
+          secretKey,
+          aliasParts: [randomService, randomProvider],
+          domain: "example.com",
+        });
+
+        // Should produce valid alias
+        expect(alias).toMatch(
+          new RegExp(
+            `^${randomService}-${randomProvider}-[a-f0-9]{8}@example\\.com$`,
+          ),
+        );
+
+        // Should validate correctly
+        const isValid = await validateEmailAlias({
+          secretKey,
+          fullAlias: alias,
+        });
+        expect(isValid).toBe(true);
+      });
+
+      it("should create unique secret keys for different aliases", async () => {
+        const domain = "test.example.com";
+        const aliasParts = ["service", "test"];
+
+        // Generate different secret keys
+        const secretKey1 = generateSecureRandomString(32);
+        const secretKey2 = generateSecureRandomString(32);
+
+        expect(secretKey1).not.toBe(secretKey2);
+
+        // Generate aliases with different keys
+        const alias1 = await generateEmailAlias({
+          secretKey: secretKey1,
+          aliasParts,
+          domain,
+        });
+
+        const alias2 = await generateEmailAlias({
+          secretKey: secretKey2,
+          aliasParts,
+          domain,
+        });
+
+        // Aliases should be different
+        expect(alias1).not.toBe(alias2);
+
+        // Each should validate with its own key
+        expect(
+          await validateEmailAlias({
+            secretKey: secretKey1,
+            fullAlias: alias1,
+          }),
+        ).toBe(true);
+
+        expect(
+          await validateEmailAlias({
+            secretKey: secretKey2,
+            fullAlias: alias2,
+          }),
+        ).toBe(true);
+
+        // Cross-validation should fail
+        expect(
+          await validateEmailAlias({
+            secretKey: secretKey1,
+            fullAlias: alias2,
+          }),
+        ).toBe(false);
+
+        expect(
+          await validateEmailAlias({
+            secretKey: secretKey2,
+            fullAlias: alias1,
+          }),
+        ).toBe(false);
+      });
     });
   });
 });
