@@ -4,7 +4,7 @@
  */
 
 // Import our universal crypto implementation
-import { crypto } from "./crypto.js";
+import { getCryptoInstance } from "./crypto.js";
 
 /**
  * Options for the {@link generateEmailAlias} function.
@@ -62,6 +62,7 @@ async function _getHmacSignature(
   secretKey: string,
   data: string,
 ): Promise<ArrayBuffer> {
+  const crypto = getCryptoInstance();
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -189,9 +190,9 @@ export function generateSecureRandomString(length: number): string {
   const bytesNeeded = Math.ceil((length * 3) / 4) + 2;
 
   // Get crypto object with getRandomValues - it's available on the main crypto object
-  const cryptoObj = crypto as unknown as Crypto;
+  const crypto = getCryptoInstance();
   const randomBytes = new Uint8Array(bytesNeeded);
-  cryptoObj.getRandomValues(randomBytes);
+  crypto.getRandomValues(randomBytes);
 
   // Convert to base64 - handle different environments
   let base64: string;

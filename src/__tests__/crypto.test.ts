@@ -133,11 +133,19 @@ describe("crypto.ts", () => {
     });
 
     const { crypto: importedCrypto } = await import("../crypto.js");
-    expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
-    expect(importedCrypto.getRandomValues).toStrictEqual(
-      mockCrypto.getRandomValues,
-    );
+
+    // Test that the crypto object has the expected interface
+    expect(importedCrypto).toHaveProperty("subtle");
+    expect(importedCrypto).toHaveProperty("getRandomValues");
+    expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+    // Test that accessing properties delegates to the mock
+    expect(importedCrypto.subtle).toBe(mockCrypto.subtle);
+
+    // Test that getRandomValues works
+    const testArray = new Uint8Array(8);
+    importedCrypto.getRandomValues(testArray);
+    expect(mockCrypto.getRandomValues).toHaveBeenCalledWith(testArray);
   });
 
   it("should use window.crypto if globalThis.crypto is not available (older browser)", async () => {
@@ -160,11 +168,19 @@ describe("crypto.ts", () => {
     });
 
     const { crypto: importedCrypto } = await import("../crypto.js");
-    expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
-    expect(importedCrypto.getRandomValues).toStrictEqual(
-      mockCrypto.getRandomValues,
-    );
+
+    // Test that the crypto object has the expected interface
+    expect(importedCrypto).toHaveProperty("subtle");
+    expect(importedCrypto).toHaveProperty("getRandomValues");
+    expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+    // Test that accessing properties delegates to the mock
+    expect(importedCrypto.subtle).toBe(mockCrypto.subtle);
+
+    // Test that getRandomValues works
+    const testArray = new Uint8Array(8);
+    importedCrypto.getRandomValues(testArray);
+    expect(mockCrypto.getRandomValues).toHaveBeenCalledWith(testArray);
   });
 
   it("should use self.crypto if globalThis.crypto and window.crypto are not available (web worker)", async () => {
@@ -187,11 +203,64 @@ describe("crypto.ts", () => {
     });
 
     const { crypto: importedCrypto } = await import("../crypto.js");
-    expect(importedCrypto).toStrictEqual(mockCrypto);
-    expect(importedCrypto.subtle).toStrictEqual(mockCrypto.subtle);
-    expect(importedCrypto.getRandomValues).toStrictEqual(
-      mockCrypto.getRandomValues,
-    );
+
+    // Test that the crypto object has the expected interface
+    expect(importedCrypto).toHaveProperty("subtle");
+    expect(importedCrypto).toHaveProperty("getRandomValues");
+    expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+    // Test that accessing properties delegates to the mock
+    expect(importedCrypto.subtle).toBe(mockCrypto.subtle);
+
+    // Test that getRandomValues works
+    const testArray = new Uint8Array(8);
+    importedCrypto.getRandomValues(testArray);
+    expect(mockCrypto.getRandomValues).toHaveBeenCalledWith(testArray);
+  });
+
+  it("should prioritize self.crypto in Chrome extension service worker environment", async () => {
+    const mockSelfCrypto = createMockCrypto();
+    const mockGlobalThisCrypto = createMockCrypto();
+
+    // Simulate Chrome extension service worker where both self.crypto and globalThis.crypto exist
+    // but self.crypto should take precedence (service worker context)
+    Object.defineProperty(globalThis, "crypto", {
+      value: mockGlobalThisCrypto,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, "window", {
+      value: undefined, // No window in service worker
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, "self", {
+      value: { crypto: mockSelfCrypto },
+      writable: true,
+      configurable: true,
+    });
+
+    const { crypto: importedCrypto } = await import("../crypto.js");
+
+    // Test that the crypto object has the expected interface
+    expect(importedCrypto).toHaveProperty("subtle");
+    expect(importedCrypto).toHaveProperty("getRandomValues");
+    expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+    // CRITICAL: Test that self.crypto is used, NOT globalThis.crypto
+    // This is the key behavior for Chrome extension service workers
+    expect(importedCrypto.subtle).toBe(mockSelfCrypto.subtle);
+    expect(importedCrypto.subtle).not.toBe(mockGlobalThisCrypto.subtle);
+
+    // Test that getRandomValues delegates to self.crypto
+    const testArray = new Uint8Array(8);
+    importedCrypto.getRandomValues(testArray);
+    expect(mockSelfCrypto.getRandomValues).toHaveBeenCalledWith(testArray);
+    expect(mockGlobalThisCrypto.getRandomValues).not.toHaveBeenCalled();
+
+    // Test lazy initialization - crypto detection should happen on access, not import
+    // This ensures Chrome extension service workers don't fail during module loading
+    expect(mockSelfCrypto.getRandomValues).toHaveBeenCalledTimes(1);
   });
 
   it("should use node:crypto.webcrypto in Node.js environment", async () => {
@@ -224,7 +293,14 @@ describe("crypto.ts", () => {
       }) as unknown as NodeJS.Require;
 
       const { crypto: importedCrypto } = await import("../crypto.js");
-      expect(importedCrypto).toStrictEqual(mockWebCrypto);
+
+      // Test that the crypto object has the expected interface
+      expect(importedCrypto).toHaveProperty("subtle");
+      expect(importedCrypto).toHaveProperty("getRandomValues");
+      expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+      // Test that accessing properties delegates to the mock
+      expect(importedCrypto.subtle).toBe(mockWebCrypto.subtle);
       expect(global.require).toHaveBeenCalledWith("node:crypto");
     });
   });
@@ -262,7 +338,14 @@ describe("crypto.ts", () => {
       }) as unknown as NodeJS.Require;
 
       const { crypto: importedCrypto } = await import("../crypto.js");
-      expect(importedCrypto).toStrictEqual(mockWebCrypto);
+
+      // Test that the crypto object has the expected interface
+      expect(importedCrypto).toHaveProperty("subtle");
+      expect(importedCrypto).toHaveProperty("getRandomValues");
+      expect(typeof importedCrypto.getRandomValues).toBe("function");
+
+      // Test that accessing properties delegates to the mock
+      expect(importedCrypto.subtle).toBe(mockWebCrypto.subtle);
       expect(global.require).toHaveBeenCalledWith("node:crypto");
       expect(global.require).toHaveBeenCalledWith("crypto");
     });
@@ -298,7 +381,10 @@ describe("crypto.ts", () => {
         throw new Error(`Module ${module} not found`);
       }) as unknown as NodeJS.Require;
 
-      await expect(import("../crypto.js")).rejects.toThrow(
+      const { crypto: importedCrypto } = await import("../crypto.js");
+
+      // Error should be thrown when accessing crypto properties
+      expect(() => importedCrypto.subtle).toThrow(
         "Web Crypto API not available. Node.js 16+ required.",
       );
     });
@@ -328,7 +414,10 @@ describe("crypto.ts", () => {
         throw new Error(`Cannot require module ${module}`);
       }) as unknown as NodeJS.Require;
 
-      await expect(import("../crypto.js")).rejects.toThrow(
+      const { crypto: importedCrypto } = await import("../crypto.js");
+
+      // Error should be thrown when accessing crypto properties
+      expect(() => importedCrypto.subtle).toThrow(
         "Crypto API not available in this environment",
       );
     });
@@ -358,7 +447,10 @@ describe("crypto.ts", () => {
         throw new Error("require is not defined");
       }) as unknown as NodeJS.Require;
 
-      await expect(import("../crypto.js")).rejects.toThrow(
+      const { crypto: importedCrypto } = await import("../crypto.js");
+
+      // Error should be thrown when accessing crypto properties
+      expect(() => importedCrypto.subtle).toThrow(
         "Crypto API not available in this environment",
       );
     });
@@ -388,7 +480,10 @@ describe("crypto.ts", () => {
         throw new Error("No crypto module");
       }) as unknown as NodeJS.Require;
 
-      await expect(import("../crypto.js")).rejects.toThrow(
+      const { crypto: importedCrypto } = await import("../crypto.js");
+
+      // Error should be thrown when accessing crypto properties
+      expect(() => importedCrypto.subtle).toThrow(
         "Crypto API not available in this environment",
       );
     });
@@ -418,9 +513,77 @@ describe("crypto.ts", () => {
         throw new Error("No crypto module");
       }) as unknown as NodeJS.Require;
 
-      await expect(import("../crypto.js")).rejects.toThrow(
+      const { crypto: importedCrypto } = await import("../crypto.js");
+
+      // Error should be thrown when accessing crypto properties
+      expect(() => importedCrypto.subtle).toThrow(
         "Crypto API not available in this environment",
       );
+    });
+  });
+
+  it("should work end-to-end in Chrome extension service worker scenario", async () => {
+    await jest.isolateModulesAsync(async () => {
+      // Simulate actual Chrome extension service worker environment
+      Object.defineProperty(globalThis, "crypto", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(globalThis, "window", {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      // Mock self.crypto with real-like behavior
+      const mockSelfCrypto = {
+        subtle: {
+          importKey: jest.fn(() =>
+            Promise.resolve("mock-key" as unknown as CryptoKey),
+          ),
+          sign: jest.fn(() =>
+            Promise.resolve(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]).buffer),
+          ),
+        },
+        getRandomValues: jest.fn((array: Uint8Array) => {
+          for (let i = 0; i < array.length; i++) {
+            array[i] = i % 256;
+          }
+          return array;
+        }),
+      };
+
+      Object.defineProperty(globalThis, "self", {
+        value: { crypto: mockSelfCrypto },
+        writable: true,
+        configurable: true,
+      });
+
+      // Import and test actual library functions
+      const { generateEmailAlias, validateEmailAlias } = await import(
+        "../index.js"
+      );
+
+      // This should work without throwing "Crypto API not available in this environment"
+      const alias = await generateEmailAlias({
+        secretKey: "test-secret",
+        aliasParts: ["shopping", "amazon"],
+        domain: "example.com",
+      });
+
+      expect(alias).toMatch(/^shopping-amazon-[a-f0-9]{8}@example\.com$/);
+
+      const isValid = await validateEmailAlias({
+        secretKey: "test-secret",
+        fullAlias: alias,
+      });
+
+      expect(isValid).toBe(true);
+
+      // Verify self.crypto was actually used
+      expect(mockSelfCrypto.subtle.importKey).toHaveBeenCalled();
+      expect(mockSelfCrypto.subtle.sign).toHaveBeenCalled();
     });
   });
 });

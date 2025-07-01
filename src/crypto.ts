@@ -14,6 +14,15 @@ interface CryptoInterface {
  * @internal
  */
 function getCrypto(): CryptoInterface {
+  // Service worker context (Chrome extensions, web workers) - check this first
+  if (
+    typeof self !== "undefined" &&
+    self.crypto?.subtle &&
+    typeof self.crypto?.getRandomValues === "function"
+  ) {
+    return self.crypto as CryptoInterface;
+  }
+
   // Browser extensions, modern browsers, and Cloudflare Workers
   if (
     typeof globalThis !== "undefined" &&
@@ -23,22 +32,13 @@ function getCrypto(): CryptoInterface {
     return globalThis.crypto as CryptoInterface;
   }
 
-  // Older browsers fallback
+  // Browser fallback
   if (
     typeof window !== "undefined" &&
     window.crypto?.subtle &&
     typeof window.crypto?.getRandomValues === "function"
   ) {
     return window.crypto as CryptoInterface;
-  }
-
-  // Web Workers fallback
-  if (
-    typeof self !== "undefined" &&
-    self.crypto?.subtle &&
-    typeof self.crypto?.getRandomValues === "function"
-  ) {
-    return self.crypto as CryptoInterface;
   }
 
   // Node.js environment detection
@@ -81,5 +81,34 @@ function getCrypto(): CryptoInterface {
   throw new Error("Crypto API not available in this environment");
 }
 
+/**
+ * Lazy-loaded crypto instance getter
+ * @internal
+ */
+export const getCryptoInstance = (): CryptoInterface => getCrypto();
+
+// Create a crypto object that delegates to getCrypto() when properties are accessed
+// This allows the crypto object to be importable but delays the actual crypto detection
+// until it's actually used, which is critical for Chrome extension service workers
+const createCryptoDelegate = (): CryptoInterface => {
+  let cachedCrypto: CryptoInterface | null = null;
+
+  const getCachedCrypto = (): CryptoInterface => {
+    if (!cachedCrypto) {
+      cachedCrypto = getCrypto();
+    }
+    return cachedCrypto;
+  };
+
+  return {
+    get subtle() {
+      return getCachedCrypto().subtle;
+    },
+    getRandomValues(array: Uint8Array): Uint8Array {
+      return getCachedCrypto().getRandomValues(array);
+    },
+  };
+};
+
 // Export the crypto instance
-export const crypto = getCrypto();
+export const crypto = createCryptoDelegate();
