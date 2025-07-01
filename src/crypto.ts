@@ -17,17 +17,19 @@ function getCrypto(): CryptoInterface {
   // Service worker context (Chrome extensions, web workers) - check this first
   if (
     typeof self !== "undefined" &&
-    self.crypto?.subtle &&
-    typeof self.crypto?.getRandomValues === "function"
+    self.crypto &&
+    self.crypto.subtle &&
+    typeof self.crypto.getRandomValues === "function"
   ) {
     return self.crypto as CryptoInterface;
   }
 
-  // Browser extensions, modern browsers, and Cloudflare Workers
+  // GlobalThis crypto (modern browsers, workers)
   if (
     typeof globalThis !== "undefined" &&
-    globalThis.crypto?.subtle &&
-    typeof globalThis.crypto?.getRandomValues === "function"
+    globalThis.crypto &&
+    globalThis.crypto.subtle &&
+    typeof globalThis.crypto.getRandomValues === "function"
   ) {
     return globalThis.crypto as CryptoInterface;
   }
@@ -35,8 +37,9 @@ function getCrypto(): CryptoInterface {
   // Browser fallback
   if (
     typeof window !== "undefined" &&
-    window.crypto?.subtle &&
-    typeof window.crypto?.getRandomValues === "function"
+    window.crypto &&
+    window.crypto.subtle &&
+    typeof window.crypto.getRandomValues === "function"
   ) {
     return window.crypto as CryptoInterface;
   }
@@ -48,7 +51,7 @@ function getCrypto(): CryptoInterface {
       const nodeCrypto = require("node:crypto");
       if (
         nodeCrypto.webcrypto?.subtle &&
-        typeof nodeCrypto.webcrypto?.getRandomValues === "function"
+        typeof nodeCrypto.webcrypto.getRandomValues === "function"
       ) {
         return nodeCrypto.webcrypto as CryptoInterface;
       }
@@ -59,7 +62,7 @@ function getCrypto(): CryptoInterface {
         const crypto = require("crypto");
         if (
           crypto.webcrypto?.subtle &&
-          typeof crypto.webcrypto?.getRandomValues === "function"
+          typeof crypto.webcrypto.getRandomValues === "function"
         ) {
           return crypto.webcrypto as CryptoInterface;
         }
@@ -82,33 +85,25 @@ function getCrypto(): CryptoInterface {
 }
 
 /**
- * Lazy-loaded crypto instance getter
+ * Direct crypto instance getter - no lazy loading, no caching
  * @internal
  */
 export const getCryptoInstance = (): CryptoInterface => getCrypto();
 
-// Create a crypto object that delegates to getCrypto() when properties are accessed
-// This allows the crypto object to be importable but delays the actual crypto detection
-// until it's actually used, which is critical for Chrome extension service workers
-const createCryptoDelegate = (): CryptoInterface => {
-  let cachedCrypto: CryptoInterface | null = null;
+// Export direct crypto access - no delegation, no getters
+let _cryptoInstance: CryptoInterface | null = null;
 
-  const getCachedCrypto = (): CryptoInterface => {
-    if (!cachedCrypto) {
-      cachedCrypto = getCrypto();
+export const crypto = {
+  get subtle(): SubtleCrypto {
+    if (!_cryptoInstance) {
+      _cryptoInstance = getCrypto();
     }
-    return cachedCrypto;
-  };
-
-  return {
-    get subtle() {
-      return getCachedCrypto().subtle;
-    },
-    getRandomValues(array: Uint8Array): Uint8Array {
-      return getCachedCrypto().getRandomValues(array);
-    },
-  };
+    return _cryptoInstance.subtle;
+  },
+  getRandomValues(array: Uint8Array): Uint8Array {
+    if (!_cryptoInstance) {
+      _cryptoInstance = getCrypto();
+    }
+    return _cryptoInstance.getRandomValues(array);
+  },
 };
-
-// Export the crypto instance
-export const crypto = createCryptoDelegate();
