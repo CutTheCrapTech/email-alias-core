@@ -79,7 +79,7 @@ The following test vectors have been verified to produce identical results acros
   aliasParts: ["service", "provider"],
   domain: "example.com",
   hashLength: 8,
-  expectedAlias: "service-provider-e423d796@example.com"
+  expectedAlias: "service-provider-74e423d7@example.com"
 }
 ```
 
@@ -91,7 +91,7 @@ The following test vectors have been verified to produce identical results acros
   aliasParts: ["shop", "amazon", "electronics"],
   domain: "test.com",
   hashLength: 12,
-  expectedAlias: "shop-amazon-electronics-5c8da60c8dfa@test.com"
+  expectedAlias: "shop-amazon-electronics-615c8da60c8d@test.com"
 }
 ```
 
@@ -103,7 +103,7 @@ The following test vectors have been verified to produce identical results acros
   aliasParts: ["news", "tech"],
   domain: "newsletter.com",
   hashLength: 6,
-  expectedAlias: "news-tech-e26cad@newsletter.com"
+  expectedAlias: "news-tech-73e26c@newsletter.com"
 }
 ```
 
@@ -115,7 +115,7 @@ The following test vectors have been verified to produce identical results acros
   aliasParts: ["social", "media"],
   domain: "social.net",
   hashLength: 16,
-  expectedAlias: "social-media-c7df94be59dd174b@social.net"
+  expectedAlias: "social-media-6cc7df94be59dd17@social.net"
 }
 ```
 
@@ -127,7 +127,7 @@ The following test vectors have been verified to produce identical results acros
   aliasParts: ["test-123", "service_name", "with.dots"],
   domain: "special.example.org",
   hashLength: 10,
-  expectedAlias: "test-123-service_name-with.dots-0329e43d18@special.example.org"
+  expectedAlias: "test-123-service_name-with.dots-730329e43d@special.example.org"
 }
 ```
 

@@ -9,7 +9,11 @@ A zero-dependency library to create and verify secure email aliases for custom d
 
 ## Core Concept
 
-`email-alias-core` allows you to generate unique, secure, and verifiable email aliases for your custom domain. Instead of using your real email address for online services, you can generate an alias like `shop-amazon-a1b2c3d4@your-domain.com`.
+`email-alias-core` allows you to generate unique, secure, and verifiable email aliases for your custom domain. Instead of using your real email address for online services, you can generate an alias like `shop-amazon-74e423d7@your-domain.com`.
+
+**Note:** The alias format now includes a key prefix for efficient validation:
+`<aliasParts>-<keyPrefix><hash>@domain.com`
+where `keyPrefix` is the first 2 hex chars of the secret key, and `hash` is the truncated HMAC signature.
 
 The system is "verifiable" because it uses a secret key and HMAC-SHA256 to generate a cryptographic signature for each alias. This means your email infrastructure (e.g., a Cloudflare Worker) can instantly verify if an incoming email is addressed to a legitimately generated alias, effectively stopping spam and phishing attempts sent to guessed addresses.
 
@@ -68,19 +72,27 @@ async function createAlias() {
     aliasParts: ["shop", "amazon"],
   });
   console.log(alias);
-  // Example output: shop-amazon-a1b2c3d4@example.com
+  // Example output: shop-amazon-74e423d7@example.com
 }
 
 // --- Validating an Alias ---
+// NOTE: validateEmailAlias now takes a keysRecipientMap object, not a single secretKey.
 
 async function checkAlias(incomingAlias) {
-  const isValid = await validateEmailAlias({
-    ...config,
+  // You can map multiple keys to recipients if you rotate keys or support multiple users.
+  const keysRecipientMap = {
+    "a-very-secret-key-that-is-long-enough": "user@example.com",
+    // ...add more keys if needed
+  };
+
+  const recipient = await validateEmailAlias({
+    keysRecipientMap,
     fullAlias: incomingAlias,
+    // hashLength is optional, defaults to 8
   });
 
-  if (isValid) {
-    console.log(`'${incomingAlias}' is a legitimate alias.`);
+  if (recipient) {
+    console.log(`'${incomingAlias}' is a legitimate alias for: ${recipient}`);
   } else {
     console.log(`'${incomingAlias}' is NOT a valid alias. Rejecting email.`);
   }
@@ -104,7 +116,7 @@ function createRandomStrings() {
 }
 
 createAlias();
-checkAlias("shop-amazon-a1b2c3d4@example.com");
+checkAlias("shop-amazon-74e423d7@example.com");
 checkAlias("shop-amazon-ffffffff@example.com");
 createRandomStrings();
 ```
@@ -119,16 +131,23 @@ Returns a `Promise<string>` with the full email alias.
   - `secretKey` `<string>`: **Required.** Your master secret key.
   - `aliasParts` `<string[]>`: **Required.** An array of strings to form the identifiable part of the alias (e.g., `['shop', 'amazon']`).
   - `domain` `<string>`: **Required.** Your custom domain (e.g., 'example.com').
-  - `hashLength` `<number>`: _Optional._ The length of the HMAC signature. **Defaults to 8.**
+  - `hashLength` `<number>`: _Optional._ The length of the HMAC signature (including key prefix). **Defaults to 8.**
+
+**Alias format:**
+`<aliasParts>-<keyPrefix><hash>@domain.com`
+where `keyPrefix` is the first 2 hex chars of the secret key, and `hash` is the truncated HMAC signature.
 
 ### `validateEmailAlias(options)`
 
-Returns a `Promise<boolean>` indicating if the alias is valid.
+Returns a `Promise<string>` with the recipient value if valid, or an empty string if invalid.
 
 - `options` `<Object>`
-  - `secretKey` `<string>`: **Required.** Your master secret key.
+  - `keysRecipientMap` `<Record<string, string>>`: **Required.** An object mapping secret keys to recipient identifiers (e.g., email addresses or user IDs).
   - `fullAlias` `<string>`: **Required.** The full email alias to validate.
   - `hashLength` `<number>`: _Optional._ The length of the hash in the alias. **Defaults to 8.** Must match the length used during generation.
+
+**Note:**
+This function now supports efficient validation with multiple keys by using the key prefix embedded in the alias.
 
 ### `generateSecureRandomString(length)`
 
