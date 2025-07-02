@@ -83,14 +83,20 @@ describe("email-alias-core", () => {
         aliasParts: ["finance", "chase-bank"],
         domain,
       });
-      const isValid = await validateEmailAlias({ secretKey, fullAlias: alias });
-      expect(isValid).toBe(true);
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
+        fullAlias: alias,
+      });
+      expect(recipient).toBe("recipient@gmail.com");
     });
 
     it("should fail validation for an alias with a tampered hash", async () => {
       const alias = "finance-chase-bank-ffffffff@example.com";
-      const isValid = await validateEmailAlias({ secretKey, fullAlias: alias });
-      expect(isValid).toBe(false);
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
+        fullAlias: alias,
+      });
+      expect(recipient).toBe("");
     });
 
     it("should fail validation when using the wrong secret key", async () => {
@@ -99,11 +105,13 @@ describe("email-alias-core", () => {
         aliasParts: ["work", "github"],
         domain,
       });
-      const isValid = await validateEmailAlias({
-        secretKey: "a-different-and-wrong-secret-key",
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: {
+          "a-different-and-wrong-secret-key": "recipient@gmail.com",
+        },
         fullAlias: alias,
       });
-      expect(isValid).toBe(false);
+      expect(recipient).toBe("");
     });
 
     it("should fail validation for an alias with tampered aliasParts", async () => {
@@ -128,11 +136,11 @@ describe("email-alias-core", () => {
       // Construct a new, invalid alias with the valid hash but a different prefix
       const tamperedAlias = `tampered-service-${hash}@example.com`;
 
-      const isValid = await validateEmailAlias({
-        secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
         fullAlias: tamperedAlias,
       });
-      expect(isValid).toBe(false);
+      expect(recipient).toBe("");
     });
 
     it("should correctly validate an alias with a custom hash length", async () => {
@@ -143,12 +151,12 @@ describe("email-alias-core", () => {
         domain,
         hashLength,
       });
-      const isValid = await validateEmailAlias({
-        secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
         fullAlias: alias,
         hashLength,
       });
-      expect(isValid).toBe(true);
+      expect(recipient).toBe("recipient@gmail.com");
     });
 
     it("should fail validation if hash length specified does not match alias", async () => {
@@ -159,8 +167,11 @@ describe("email-alias-core", () => {
         hashLength: 10, // Generated with length 10
       });
       // But we try to validate it with the default length of 8
-      const isValid = await validateEmailAlias({ secretKey, fullAlias: alias });
-      expect(isValid).toBe(false);
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
+        fullAlias: alias,
+      });
+      expect(recipient).toBe("");
     });
 
     it.each([
@@ -176,11 +187,11 @@ describe("email-alias-core", () => {
         // The `as any` cast is intentional here. It allows us to bypass TypeScript's
         // compile-time checks to test the runtime robustness of the validation function
         // against invalid data types like null and undefined.
-        const isValid = await validateEmailAlias({
-          secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: malformedAlias as string,
         });
-        expect(isValid).toBe(false);
+        expect(recipient).toBe("");
       },
     );
   });

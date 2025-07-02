@@ -575,11 +575,11 @@ describe("crypto.ts", () => {
       expect(alias).toMatch(/^shopping-amazon-[a-f0-9]{8}@example\.com$/);
 
       const isValid = await validateEmailAlias({
-        secretKey: "test-secret",
+        keysRecipientMap: { "test-secret": "recipient@gmail.com" },
         fullAlias: alias,
       });
 
-      expect(isValid).toBe(true);
+      expect(isValid).toBe("recipient@gmail.com");
 
       // Verify self.crypto was actually used
       expect(mockSelfCrypto.subtle.importKey).toHaveBeenCalled();

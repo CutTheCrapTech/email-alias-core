@@ -78,28 +78,28 @@ describe("Cross-Environment Consistency", () => {
         });
 
         // Validate it multiple times
-        const isValid1 = await validateEmailAlias({
-          secretKey,
+        const recipient1 = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength,
         });
 
-        const isValid2 = await validateEmailAlias({
-          secretKey,
+        const recipient2 = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength,
         });
 
-        const isValid3 = await validateEmailAlias({
-          secretKey,
+        const recipient3 = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength,
         });
 
         // All should be true
-        expect(isValid1).toBe(true);
-        expect(isValid2).toBe(true);
-        expect(isValid3).toBe(true);
+        expect(recipient1).toBe("recipient@gmail.com");
+        expect(recipient2).toBe("recipient@gmail.com");
+        expect(recipient3).toBe("recipient@gmail.com");
       },
     );
 
@@ -141,21 +141,21 @@ describe("Cross-Environment Consistency", () => {
           secretKey: testSecretKey,
           hashLength: testHashLength,
         } of invalidAliases) {
-          const isValid1 = await validateEmailAlias({
-            secretKey: testSecretKey,
+          const recipient1 = await validateEmailAlias({
+            keysRecipientMap: { [testSecretKey]: "recipient@gmail.com" },
             fullAlias: alias,
             hashLength: testHashLength,
           });
 
-          const isValid2 = await validateEmailAlias({
-            secretKey: testSecretKey,
+          const recipient2 = await validateEmailAlias({
+            keysRecipientMap: { [testSecretKey]: "recipient@gmail.com" },
             fullAlias: alias,
             hashLength: testHashLength,
           });
 
           // Both should consistently be false
-          expect(isValid1).toBe(false);
-          expect(isValid2).toBe(false);
+          expect(recipient1).toBe("");
+          expect(recipient2).toBe("");
         }
       },
     );
@@ -199,13 +199,13 @@ describe("Cross-Environment Consistency", () => {
         expect(alias).toBe(alias2);
 
         // Validate that the generated alias is valid
-        const isValid = await validateEmailAlias({
-          secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength,
         });
 
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
       },
     );
   });
@@ -228,12 +228,11 @@ describe("Cross-Environment Consistency", () => {
 
       expect(alias1).toBe(alias2);
 
-      const isValid = await validateEmailAlias({
-        secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
         fullAlias: alias1,
       });
-
-      expect(isValid).toBe(true);
+      expect(recipient).toBe("recipient@gmail.com");
     });
 
     it("should handle long alias parts consistently", async () => {
@@ -256,12 +255,11 @@ describe("Cross-Environment Consistency", () => {
 
       expect(alias1).toBe(alias2);
 
-      const isValid = await validateEmailAlias({
-        secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
         fullAlias: alias1,
       });
-
-      expect(isValid).toBe(true);
+      expect(recipient).toBe("recipient@gmail.com");
     });
 
     it("should handle Unicode characters consistently", async () => {
@@ -281,12 +279,11 @@ describe("Cross-Environment Consistency", () => {
 
       expect(alias1).toBe(alias2);
 
-      const isValid = await validateEmailAlias({
-        secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
         fullAlias: alias1,
       });
-
-      expect(isValid).toBe(true);
+      expect(recipient).toBe("recipient@gmail.com");
     });
   });
 
@@ -312,11 +309,11 @@ describe("Cross-Environment Consistency", () => {
       const validateStartTime = Date.now();
 
       for (const alias of aliases) {
-        const isValid = await validateEmailAlias({
-          secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
         });
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
       }
 
       const validateTime = Date.now() - validateStartTime;
@@ -351,30 +348,30 @@ describe("Cross-Environment Consistency", () => {
       expect(alias1).not.toBe(alias2);
 
       // Each alias should validate with its respective secret key
-      const isValid1 = await validateEmailAlias({
-        secretKey: secretKey1,
+      const recipient1 = await validateEmailAlias({
+        keysRecipientMap: { [secretKey1]: "recipient1" },
         fullAlias: alias1,
       });
-      expect(isValid1).toBe(true);
+      expect(recipient1).toBe("recipient1");
 
-      const isValid2 = await validateEmailAlias({
-        secretKey: secretKey2,
+      const recipient2 = await validateEmailAlias({
+        keysRecipientMap: { [secretKey2]: "recipient2" },
         fullAlias: alias2,
       });
-      expect(isValid2).toBe(true);
+      expect(recipient2).toBe("recipient2");
 
       // Cross-validation should fail
       const crossValid1 = await validateEmailAlias({
-        secretKey: secretKey1,
+        keysRecipientMap: { [secretKey1]: "recipient1" },
         fullAlias: alias2, // Using alias generated with secretKey2
       });
-      expect(crossValid1).toBe(false);
+      expect(crossValid1).toBe("");
 
       const crossValid2 = await validateEmailAlias({
-        secretKey: secretKey2,
+        keysRecipientMap: { [secretKey2]: "recipient2" },
         fullAlias: alias1, // Using alias generated with secretKey1
       });
-      expect(crossValid2).toBe(false);
+      expect(crossValid2).toBe("");
     });
   });
 
@@ -647,11 +644,11 @@ describe("Cross-Environment Consistency", () => {
         );
 
         // Should validate correctly
-        const isValid = await validateEmailAlias({
-          secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
         });
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
       });
 
       it("should create unique secret keys for different aliases", async () => {
@@ -683,32 +680,32 @@ describe("Cross-Environment Consistency", () => {
         // Each should validate with its own key
         expect(
           await validateEmailAlias({
-            secretKey: secretKey1,
+            keysRecipientMap: { [secretKey1]: "recipient1" },
             fullAlias: alias1,
           }),
-        ).toBe(true);
+        ).toBe("recipient1");
 
         expect(
           await validateEmailAlias({
-            secretKey: secretKey2,
+            keysRecipientMap: { [secretKey2]: "recipient2" },
             fullAlias: alias2,
           }),
-        ).toBe(true);
+        ).toBe("recipient2");
 
         // Cross-validation should fail
         expect(
           await validateEmailAlias({
-            secretKey: secretKey1,
+            keysRecipientMap: { [secretKey1]: "recipient1" },
             fullAlias: alias2,
           }),
-        ).toBe(false);
+        ).toBe("");
 
         expect(
           await validateEmailAlias({
-            secretKey: secretKey2,
+            keysRecipientMap: { [secretKey2]: "recipient2" },
             fullAlias: alias1,
           }),
-        ).toBe(false);
+        ).toBe("");
       });
     });
   });

@@ -39,9 +39,9 @@ interface GenerateOptions {
  */
 interface ValidateOptions {
   /**
-   * The master secret key used for validation.
+   * The keysRecipientMap is a map of key to recipient emails which is used for validation.
    */
-  secretKey: string;
+  keysRecipientMap: Record<string, string>;
   /**
    * The full email alias to validate.
    * @example `shop-amazon-a1b2c3d4@example.com`
@@ -114,9 +114,17 @@ export async function generateEmailAlias({
   const localPartPrefix = aliasParts.join("-");
   const signatureBuffer = await _getHmacSignature(secretKey, localPartPrefix);
   const fullHash = _bufferToHex(signatureBuffer);
-  const truncatedHash = fullHash.substring(0, hashLength);
 
-  return `${localPartPrefix}-${truncatedHash}@${domain}`;
+  // Get first 2 chars of the key as hex
+  const keyHint = _bufferToHex(
+    new TextEncoder().encode(secretKey).slice(0, 1),
+  ).substring(0, 2); // First byte as 2 hex chars
+
+  // Combine key hint + truncated hash
+  const truncatedHash = fullHash.substring(0, hashLength - 2); // Reduce by 2 to make room
+  const finalHash = keyHint + truncatedHash;
+
+  return `${localPartPrefix}-${finalHash}@${domain}`;
 }
 
 /**
@@ -133,20 +141,19 @@ export async function generateEmailAlias({
  * @public
  */
 export async function validateEmailAlias({
-  secretKey,
+  keysRecipientMap,
   fullAlias,
   hashLength = 8,
-}: ValidateOptions): Promise<boolean> {
+}: ValidateOptions): Promise<string> {
   if (!fullAlias || typeof fullAlias !== "string") {
-    return false;
+    return "";
   }
 
   // Regex to parse the alias into its three main components:
   const aliasRegex = new RegExp(`^(.*)-([a-f0-9]{${hashLength}})@(.+)$`);
   const match = fullAlias.match(aliasRegex);
-
   if (!match) {
-    return false;
+    return "";
   }
 
   // Extract the parts with proper null checking
@@ -155,15 +162,37 @@ export async function validateEmailAlias({
 
   // Additional safety check (though this should never happen given our regex)
   if (!localPartPrefix || !providedHash) {
-    return false;
+    return "";
   }
 
-  // Re-generate the hash using the same parameters.
-  const signatureBuffer = await _getHmacSignature(secretKey, localPartPrefix);
-  const fullHash = _bufferToHex(signatureBuffer);
-  const expectedHash = fullHash.substring(0, hashLength);
+  // Extract key hint from first 2 chars
+  const keyHint = providedHash.substring(0, 2);
+  const actualHash = providedHash.substring(2);
 
-  return providedHash === expectedHash;
+  // Find keys that match this hint
+  const candidateKeys = Object.keys(keysRecipientMap).filter((key) => {
+    const keyFirstByte = _bufferToHex(
+      new TextEncoder().encode(key).slice(0, 1),
+    ).substring(0, 2);
+    return keyFirstByte === keyHint;
+  });
+
+  // Test only the candidate keys (usually 0-2 keys instead of 20!)
+  for (const secretKey of candidateKeys) {
+    const signatureBuffer = await _getHmacSignature(secretKey, localPartPrefix);
+    const fullHash = _bufferToHex(signatureBuffer);
+    const expectedHash = fullHash.substring(0, hashLength - 2);
+
+    if (expectedHash === actualHash) {
+      const recipient = keysRecipientMap[secretKey];
+      if (typeof recipient === "string") {
+        return recipient;
+      }
+      return "";
+    }
+  }
+
+  return "";
 }
 
 /**

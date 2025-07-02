@@ -33,7 +33,7 @@ describe("Cross-Environment Test Vectors", () => {
       aliasParts: ["service", "provider"],
       domain: "example.com",
       hashLength: 8,
-      expectedAlias: "service-provider-e423d796@example.com",
+      expectedAlias: "service-provider-74e423d7@example.com",
     },
     {
       description: "Multi-part alias with custom hash length",
@@ -41,7 +41,7 @@ describe("Cross-Environment Test Vectors", () => {
       aliasParts: ["shop", "amazon", "electronics"],
       domain: "test.com",
       hashLength: 12,
-      expectedAlias: "shop-amazon-electronics-5c8da60c8dfa@test.com",
+      expectedAlias: "shop-amazon-electronics-615c8da60c8d@test.com",
     },
     {
       description: "Short hash length",
@@ -49,7 +49,7 @@ describe("Cross-Environment Test Vectors", () => {
       aliasParts: ["news", "tech"],
       domain: "newsletter.com",
       hashLength: 6,
-      expectedAlias: "news-tech-e26cad@newsletter.com",
+      expectedAlias: "news-tech-73e26c@newsletter.com",
     },
     {
       description: "Long hash length",
@@ -57,7 +57,7 @@ describe("Cross-Environment Test Vectors", () => {
       aliasParts: ["social", "media"],
       domain: "social.net",
       hashLength: 16,
-      expectedAlias: "social-media-c7df94be59dd174b@social.net",
+      expectedAlias: "social-media-6cc7df94be59dd17@social.net",
     },
     {
       description: "Special characters in alias parts",
@@ -66,7 +66,7 @@ describe("Cross-Environment Test Vectors", () => {
       domain: "special.example.org",
       hashLength: 10,
       expectedAlias:
-        "test-123-service_name-with.dots-0329e43d18@special.example.org",
+        "test-123-service_name-with.dots-730329e43d@special.example.org",
     },
   ];
 
@@ -85,13 +85,13 @@ describe("Cross-Environment Test Vectors", () => {
         expect(alias).toBe(vector.expectedAlias);
 
         // Verify the alias validates correctly
-        const isValid = await validateEmailAlias({
-          secretKey: vector.secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [vector.secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength: vector.hashLength,
         });
 
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
       },
     );
   });
@@ -119,16 +119,16 @@ describe("Cross-Environment Test Vectors", () => {
       expect(uniqueAliases.size).toBe(1);
 
       // The result should always be the same (known value)
-      expect(aliases[0]).toBe("consistent-test-39f8f502@verify.example.com");
+      expect(aliases[0]).toBe("consistent-test-6439f8f5@verify.example.com");
 
       // Validate the alias
-      const isValid = await validateEmailAlias({
-        secretKey: testConfig.secretKey,
+      const recipient = await validateEmailAlias({
+        keysRecipientMap: { [testConfig.secretKey]: "recipient@gmail.com" },
         fullAlias: aliases[0],
         hashLength: testConfig.hashLength,
       });
 
-      expect(isValid).toBe(true);
+      expect(recipient).toBe("recipient@gmail.com");
     });
   });
 
@@ -154,31 +154,31 @@ describe("Cross-Environment Test Vectors", () => {
         const alias = await generateEmailAlias(config);
 
         // Validate with correct parameters
-        const isValid = await validateEmailAlias({
-          secretKey: config.secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [config.secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength: config.hashLength,
         });
 
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
 
         // Validate with wrong secret key should fail
         const invalidWithWrongKey = await validateEmailAlias({
-          secretKey: "wrong-key",
+          keysRecipientMap: { "wrong-key": "recipient@gmail.com" },
           fullAlias: alias,
           hashLength: config.hashLength,
         });
 
-        expect(invalidWithWrongKey).toBe(false);
+        expect(invalidWithWrongKey).toBe("");
 
         // Validate with wrong hash length should fail
         const invalidWithWrongLength = await validateEmailAlias({
-          secretKey: config.secretKey,
+          keysRecipientMap: { [config.secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength: config.hashLength === 8 ? 12 : 8,
         });
 
-        expect(invalidWithWrongLength).toBe(false);
+        expect(invalidWithWrongLength).toBe("");
       }
     });
   });
@@ -273,12 +273,12 @@ describe("Cross-Environment Test Vectors", () => {
       const startValidate = Date.now();
 
       for (const alias of aliases) {
-        const isValid = await validateEmailAlias({
-          secretKey: testConfig.secretKey,
+        const recipient = await validateEmailAlias({
+          keysRecipientMap: { [testConfig.secretKey]: "recipient@gmail.com" },
           fullAlias: alias,
           hashLength: testConfig.hashLength,
         });
-        expect(isValid).toBe(true);
+        expect(recipient).toBe("recipient@gmail.com");
       }
 
       const validateTime = Date.now() - startValidate;
